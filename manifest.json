@@ -1,0 +1,17 @@
+{
+  "name": "24h Pie Chart Scheduler",
+  "short_name": "Scheduler",
+  "description": "A time schedule management application that allows users to visualize and edit their 24-hour day using an interactive pie chart.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1E40AF",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
