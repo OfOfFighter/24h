@@ -1,311 +1,255 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScheduleItem, TodoItem, Preset } from './types.ts';
-import SchedulePieChart from './components/SchedulePieChart.tsx';
+import { produce } from 'immer';
+import { v4 as uuidv4 } from 'uuid';
 import SidePanel from './components/SidePanel.tsx';
+import SchedulePieChart from './components/SchedulePieChart.tsx';
+import BottomNavBar, { MobileView } from './components/BottomNavBar.tsx';
 import ScheduleEditor from './components/ScheduleEditor.tsx';
 import TodoList from './components/TodoList.tsx';
 import PresetManager from './components/PresetManager.tsx';
-import BottomNavBar, { MobileView } from './components/BottomNavBar.tsx';
-import { ClockIcon } from './components/icons.tsx';
+import { ScheduleItem, TodoItem, Preset } from './types.ts';
 
-const DEFAULT_COLORS = [
-  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+const defaultSchedule: ScheduleItem[] = [
+  { id: '1', name: '睡眠', start: 0, end: 7, color: '#1F2937' },
+  { id: '2', name: '朝の準備', start: 7, end: 8, color: '#3B82F6' },
+  { id: '3', name: '仕事', start: 8, end: 12, color: '#10B981' },
+  { id: '4', name: '昼食', start: 12, end: 13, color: '#F59E0B' },
+  { id: '5', name: '仕事', start: 13, end: 17, color: '#10B981' },
+  { id: '6', name: '運動', start: 17, end: 18, color: '#EF4444' },
+  { id: '7', name: '夕食', start: 18, end: 19, color: '#F59E0B' },
+  { id: '8', name: '自由時間', start: 19, end: 22, color: '#8B5CF6' },
+  { id: '9', name: '就寝準備', start: 22, end: 23, color: '#3B82F6' },
+  { id: '10', name: '睡眠', start: 23, end: 24, color: '#1F2937' },
 ];
 
-const createInitialSchedule = (): ScheduleItem[] => {
-  return [
-    { id: '1', name: '睡眠', start: 0, end: 7, color: '#1f77b4' },
-    { id: '2', name: '準備・通勤', start: 7, end: 9, color: '#ff7f0e' },
-    { id: '3', name: '仕事', start: 9, end: 12, color: '#2ca02c' },
-    { id: '4', name: '昼食', start: 12, end: 13, color: '#d62728' },
-    { id: '5', name: '仕事', start: 13, end: 18, color: '#9467bd' },
-    { id: '6', name: '夕食・リラックス', start: 18, end: 21, color: '#8c564b' },
-    { id: '7', name: '趣味・学習', start: 21, end: 23, color: '#e377c2' },
-    { id: '8', name: '就寝準備', start: 23, end: 24, color: '#7f7f7f' },
-  ];
-};
+const defaultPresets: Preset[] = [
+  { id: 'default', name: 'デフォルト', schedule: defaultSchedule },
+];
 
 const App: React.FC = () => {
-  const [schedule, setSchedule] = useState<ScheduleItem[]>(() => {
-    const savedSchedule = localStorage.getItem('schedule');
-    return savedSchedule ? JSON.parse(savedSchedule) : createInitialSchedule();
-  });
-  const [todos, setTodos] = useState<TodoItem[]>(() => {
-    const savedTodos = localStorage.getItem('todos');
-    return savedTodos ? JSON.parse(savedTodos) : [];
-  });
-  const [presets, setPresets] = useState<Preset[]>(() => {
-    const savedPresets = localStorage.getItem('presets');
-    return savedPresets ? JSON.parse(savedPresets) : [
-      { id: 'default', name: 'デフォルト', schedule: createInitialSchedule() }
-    ];
-  });
-  
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [presets, setPresets] = useState<Preset[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<MobileView>('chart');
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('schedule', JSON.stringify(schedule));
-  }, [schedule]);
+    try {
+      const savedSchedule = localStorage.getItem('schedule-pie-planner-schedule');
+      const savedTodos = localStorage.getItem('schedule-pie-planner-todos');
+      const savedPresets = localStorage.getItem('schedule-pie-planner-presets');
+
+      setSchedule(savedSchedule ? JSON.parse(savedSchedule) : defaultSchedule);
+      setTodos(savedTodos ? JSON.parse(savedTodos) : []);
+      setPresets(savedPresets ? JSON.parse(savedPresets) : defaultPresets);
+    } catch (error) {
+      console.error("Failed to load data from localStorage", error);
+      setSchedule(defaultSchedule);
+      setTodos([]);
+      setPresets(defaultPresets);
+    }
+    setIsLoaded(true);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
+    if (isLoaded) {
+      localStorage.setItem('schedule-pie-planner-schedule', JSON.stringify(schedule));
+      localStorage.setItem('schedule-pie-planner-todos', JSON.stringify(todos));
+      localStorage.setItem('schedule-pie-planner-presets', JSON.stringify(presets));
+    }
+  }, [schedule, todos, presets, isLoaded]);
 
-  useEffect(() => {
-    localStorage.setItem('presets', JSON.stringify(presets));
-  }, [presets]);
+  const handleSelectItem = (id: string | null) => {
+    setSelectedItemId(id);
+  };
 
   const handleUpdateScheduleItem = useCallback((updatedItem: ScheduleItem) => {
-    const itemIndex = schedule.findIndex(item => item.id === updatedItem.id);
-    if (itemIndex === -1) return;
+    setSchedule(currentSchedule => {
+      const sortedSchedule = [...currentSchedule].sort((a, b) => a.start - b.start);
+      const itemIndex = sortedSchedule.findIndex(item => item.id === updatedItem.id);
+      if (itemIndex === -1) return currentSchedule;
+      
+      const originalItem = sortedSchedule[itemIndex];
 
-    const newSchedule = [...schedule];
-    const originalItem = newSchedule[itemIndex];
+      return produce(currentSchedule, draft => {
+        const draftIndex = draft.findIndex(item => item.id === updatedItem.id);
+        if (draftIndex === -1) return;
 
-    if (originalItem.start === updatedItem.start && originalItem.end === updatedItem.end) {
-        newSchedule[itemIndex] = updatedItem;
-        setSchedule(newSchedule);
-        return;
-    }
-
-    let timeDiff = updatedItem.end - originalItem.end;
-    
-    if (updatedItem.end <= updatedItem.start) {
-        updatedItem.end = updatedItem.start + 0.5;
-    }
-     if (updatedItem.end > 24) {
-        updatedItem.end = 24;
-    }
-
-    newSchedule[itemIndex] = { ...updatedItem };
-    
-    const nextIndex = (itemIndex + 1) % newSchedule.length;
-    
-    if (itemIndex === newSchedule.length - 1) {
-        newSchedule[itemIndex].end = 24;
-        newSchedule[itemIndex].start = newSchedule[itemIndex-1].end;
-        setSchedule(newSchedule);
-        return;
-    }
-    
-    newSchedule[nextIndex].start = newSchedule[itemIndex].end;
-    
-    const normalizedSchedule = newSchedule.map((item, index) => {
-        if (index === 0) {
-            return { ...item, start: 0 };
+        if (originalItem.end !== updatedItem.end) {
+          if (itemIndex < sortedSchedule.length - 1) {
+            const nextItem = sortedSchedule[itemIndex + 1];
+            const nextDraftItem = draft.find(i => i.id === nextItem.id);
+            if (nextDraftItem) {
+              if (updatedItem.end >= nextDraftItem.end) {
+                updatedItem.end = nextDraftItem.end - 0.1; 
+              }
+              if (updatedItem.end <= updatedItem.start) {
+                updatedItem.end = updatedItem.start + 0.1;
+              }
+              nextDraftItem.start = updatedItem.end;
+            }
+          } else {
+            updatedItem.end = 24;
+          }
         }
-        const prevItem = newSchedule[index - 1];
-        const newStart = prevItem.end;
-        return { ...item, start: newStart, end: item.end - (item.start - newStart) };
+        
+        const currentDraftItem = draft[draftIndex];
+        Object.assign(currentDraftItem, updatedItem);
+      });
     });
-    
-    normalizedSchedule[normalizedSchedule.length-1].end = 24;
-    
-    setSchedule(normalizedSchedule);
-  }, [schedule]);
-  
-  const handleSplitScheduleItem = useCallback((itemId: string) => {
-    const itemIndex = schedule.findIndex(item => item.id === itemId);
-    if (itemIndex === -1) return;
+  }, []);
 
-    const itemToSplit = schedule[itemIndex];
-    const duration = itemToSplit.end - itemToSplit.start;
-    if (duration < 1) return;
+  const handleSplitScheduleItem = useCallback((id: string) => {
+    setSchedule(produce(draft => {
+      const itemIndex = draft.findIndex(item => item.id === id);
+      if (itemIndex === -1) return;
 
-    const midPoint = itemToSplit.start + duration / 2;
+      const item = draft[itemIndex];
+      const duration = item.end - item.start;
+      if (duration < 0.2) return; 
 
-    const newItem: ScheduleItem = {
-      id: Date.now().toString(),
-      name: '新しいタスク',
-      start: midPoint,
-      end: itemToSplit.end,
-      color: DEFAULT_COLORS[schedule.length % DEFAULT_COLORS.length],
-    };
+      const midPoint = item.start + duration / 2;
+      const originalEnd = item.end;
+      item.end = midPoint;
 
-    const updatedItem = { ...itemToSplit, end: midPoint };
+      const newItem: ScheduleItem = {
+        id: uuidv4(),
+        name: item.name,
+        start: midPoint,
+        end: originalEnd,
+        color: item.color,
+      };
+      draft.splice(itemIndex + 1, 0, newItem);
+    }));
+  }, []);
 
-    const newSchedule = [...schedule];
-    newSchedule.splice(itemIndex + 1, 0, newItem);
-    newSchedule[itemIndex] = updatedItem;
-
-    setSchedule(newSchedule);
-  }, [schedule]);
-
-
-  const handleDeleteScheduleItem = useCallback((itemId: string) => {
-    if (schedule.length <= 1) return;
-
-    const itemIndex = schedule.findIndex(item => item.id === itemId);
-    if (itemIndex === -1) return;
-
-    const itemToDelete = schedule[itemIndex];
-    const duration = itemToDelete.end - itemToDelete.start;
-
-    const newSchedule = schedule.filter(item => item.id !== itemId);
-    
-    if (itemIndex > 0) {
-        newSchedule[itemIndex-1].end += duration;
-    } else {
-        newSchedule[0].start = 0;
-        newSchedule[0].end = newSchedule[0].end - newSchedule[0].start;
+  const handleDeleteScheduleItem = useCallback((id: string) => {
+    if (schedule.length <= 1) {
+      alert("最後の項目は削除できません。");
+      return;
     }
+    setSchedule(currentSchedule => {
+        const sortedSchedule = [...currentSchedule].sort((a, b) => a.start - b.start);
+        const itemIndex = sortedSchedule.findIndex(item => item.id === id);
+        if (itemIndex === -1) return currentSchedule;
 
-    // Normalize
-    const normalized = newSchedule.reduce((acc, item, index) => {
-        if (index === 0) {
-            item.start = 0;
-            acc.push(item);
-            return acc;
-        }
-        const prev = acc[index-1];
-        item.start = prev.end;
-        acc.push(item);
-        return acc;
-    }, [] as ScheduleItem[]);
-    normalized[normalized.length-1].end = 24;
+        const itemToDelete = sortedSchedule[itemIndex];
 
-    setSchedule(normalized);
+        return produce(currentSchedule, draft => {
+            if (itemIndex > 0) {
+                const prevItem = sortedSchedule[itemIndex - 1];
+                const draftPrev = draft.find(i => i.id === prevItem.id);
+                if (draftPrev) draftPrev.end = itemToDelete.end;
+            } else {
+                const nextItem = sortedSchedule[itemIndex + 1];
+                const draftNext = draft.find(i => i.id === nextItem.id);
+                if (draftNext) draftNext.start = itemToDelete.start;
+            }
+            const draftIndex = draft.findIndex(item => item.id === id);
+            if (draftIndex > -1) draft.splice(draftIndex, 1);
+        });
+    });
+  }, [schedule.length]);
+
+  const handleAddTodo = useCallback((text: string) => {
+    if (!text.trim()) return;
+    const newTodo: TodoItem = { id: uuidv4(), text, completed: false };
+    setTodos(produce(draft => {
+      draft.push(newTodo);
+    }));
+  }, []);
+
+  const handleToggleTodo = useCallback((id: string) => {
+    setTodos(produce(draft => {
+      const todo = draft.find(t => t.id === id);
+      if (todo) todo.completed = !todo.completed;
+    }));
+  }, []);
+
+  const handleDeleteTodo = useCallback((id: string) => {
+    setTodos(todos => todos.filter(t => t.id !== id));
+  }, []);
+
+  const handleSavePreset = useCallback((name: string) => {
+    if (!name.trim()) {
+      alert("プリセット名を入力してください。");
+      return;
+    }
+    const newPreset: Preset = { id: uuidv4(), name, schedule: schedule };
+    setPresets(produce(draft => {
+      draft.push(newPreset);
+    }));
+    alert(`プリセット「${name}」を保存しました。`);
   }, [schedule]);
 
-
-  const handleAddTodo = (text: string) => {
-    if (!text.trim()) return;
-    const newTodo: TodoItem = { id: Date.now().toString(), text, completed: false };
-    setTodos([newTodo, ...todos]);
-  };
-
-  const handleToggleTodo = (id: string) => {
-    setTodos(todos.map(todo => todo.id === id ? { ...todo, completed: !todo.completed } : todo));
-  };
-
-  const handleDeleteTodo = (id: string) => {
-    setTodos(todos.filter(todo => todo.id !== id));
-  };
-
-  const handleSavePreset = (name: string) => {
-    if (!name.trim()) return;
-    const newPreset: Preset = { id: Date.now().toString(), name, schedule: [...schedule] };
-    setPresets([...presets, newPreset]);
-  };
-
-  const handleLoadPreset = (id: string) => {
+  const onLoadPreset = useCallback((id: string) => {
     const preset = presets.find(p => p.id === id);
     if (preset) {
       setSchedule(preset.schedule);
+      alert(`プリセット「${preset.name}」を読み込みました。`);
     }
-  };
-  
-  const handleDeletePreset = (id: string) => {
-    if (id === 'default') return;
-    setPresets(presets.filter(p => p.id !== id));
-  };
+  }, [presets]);
 
-  const viewTitles: { [key in MobileView]: string } = {
-    chart: '24h Pie Scheduler',
-    schedule: 'タイムスケジュール',
-    todo: 'TODOリスト',
-    presets: 'プリセット管理',
+  const onDeletePreset = useCallback((id: string) => {
+    if (id === 'default') {
+      alert("デフォルトのプリセットは削除できません。");
+      return;
+    }
+    setPresets(presets => presets.filter(p => p.id !== id));
+    alert("プリセットを削除しました。");
+  }, []);
+  
+  const sidePanelProps = {
+    schedule, todos, presets, selectedItemId,
+    onUpdateScheduleItem: handleUpdateScheduleItem,
+    onSplitScheduleItem: handleSplitScheduleItem,
+    onDeleteScheduleItem: handleDeleteScheduleItem,
+    onAddTodo: handleAddTodo,
+    onToggleTodo: handleToggleTodo,
+    onDeleteTodo: handleDeleteTodo,
+    onSavePreset: handleSavePreset,
+    onLoadPreset: onLoadPreset,
+    onDeletePreset: onDeletePreset,
+    onSelectItem: handleSelectItem,
   };
 
   const renderMobileView = () => {
     switch (mobileView) {
       case 'chart':
-        return (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-full h-full max-w-3xl max-h-[80vh] aspect-square">
-              <SchedulePieChart 
-                schedule={schedule} 
-                selectedItemId={selectedItemId}
-                onSelectItem={setSelectedItemId}
-              />
-            </div>
-          </div>
-        );
+        return <SchedulePieChart schedule={schedule} selectedItemId={selectedItemId} onSelectItem={handleSelectItem} />;
       case 'schedule':
-        return (
-          <ScheduleEditor
-            schedule={schedule}
-            selectedItemId={selectedItemId}
-            onUpdate={handleUpdateScheduleItem}
-            onSplit={handleSplitScheduleItem}
-            onDelete={handleDeleteScheduleItem}
-            onSelectItem={setSelectedItemId}
-          />
-        );
+        return <ScheduleEditor schedule={schedule} selectedItemId={selectedItemId} onUpdate={handleUpdateScheduleItem} onSplit={handleSplitScheduleItem} onDelete={handleDeleteScheduleItem} onSelectItem={handleSelectItem} />;
       case 'todo':
-        return (
-          <TodoList
-            todos={todos}
-            onAdd={handleAddTodo}
-            onToggle={handleToggleTodo}
-            onDelete={handleDeleteTodo}
-          />
-        );
+        return <TodoList todos={todos} onAdd={handleAddTodo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} />;
       case 'presets':
-        return (
-          <PresetManager
-            presets={presets}
-            onSave={handleSavePreset}
-            onLoad={handleLoadPreset}
-            onDelete={handleDeletePreset}
-          />
-        );
+        return <PresetManager presets={presets} onSave={handleSavePreset} onLoad={onLoadPreset} onDelete={onDeletePreset} />;
       default:
-        return null;
+        return <SchedulePieChart schedule={schedule} selectedItemId={selectedItemId} onSelectItem={handleSelectItem} />;
     }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-900 text-gray-100 font-sans">
-      {/* Mobile Header */}
-      <header className="md:hidden flex items-center justify-center p-4 bg-slate-800 border-b border-slate-700 shrink-0">
-        <ClockIcon className="w-7 h-7 mr-2 text-blue-400" />
-        <h1 className="text-xl font-bold tracking-tight">{viewTitles[mobileView]}</h1>
-      </header>
-      
-      {/* Desktop Layout */}
-      <div className="hidden md:flex flex-row flex-1 overflow-hidden">
-        <div className="w-full md:w-2/5 lg:w-1/3 xl:w-1/4 flex flex-col bg-slate-800 shadow-lg">
-          <SidePanel
-            schedule={schedule}
-            todos={todos}
-            presets={presets}
-            selectedItemId={selectedItemId}
-            onUpdateScheduleItem={handleUpdateScheduleItem}
-            onSplitScheduleItem={handleSplitScheduleItem}
-            onDeleteScheduleItem={handleDeleteScheduleItem}
-            onAddTodo={handleAddTodo}
-            onToggleTodo={handleToggleTodo}
-            onDeleteTodo={handleDeleteTodo}
-            onSavePreset={handleSavePreset}
-            onLoadPreset={handleLoadPreset}
-            onDeletePreset={handleDeletePreset}
-            onSelectItem={setSelectedItemId}
-          />
-        </div>
-        <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-slate-900">
-          <div className="w-full h-full max-w-3xl max-h-[80vh] aspect-square">
-            <SchedulePieChart 
-              schedule={schedule} 
-              selectedItemId={selectedItemId}
-              onSelectItem={setSelectedItemId}
-            />
-          </div>
-        </main>
-      </div>
+    <div className="bg-slate-800 text-white font-sans h-screen flex flex-col md:flex-row overflow-hidden">
+      <aside className="w-full md:w-1/3 lg:w-1/4 h-full border-r border-slate-700 bg-slate-800 hidden md:block">
+        <SidePanel {...sidePanelProps} />
+      </aside>
 
-      {/* Mobile Layout */}
-      <main className="md:hidden flex-1 overflow-y-auto p-2 sm:p-4">
-        {renderMobileView()}
+      <main className="flex-1 h-full flex flex-col">
+        <div className="md:hidden p-4 border-b border-slate-700 flex items-center">
+             <h1 className="text-xl font-bold tracking-tight">24h Pie Scheduler</h1>
+        </div>
+        <div className="flex-1 relative overflow-y-auto">
+          <div className="hidden md:block w-full h-full">
+            <SchedulePieChart schedule={schedule} selectedItemId={selectedItemId} onSelectItem={handleSelectItem} />
+          </div>
+          <div className="md:hidden w-full h-full">
+            {renderMobileView()}
+          </div>
+        </div>
+        <BottomNavBar activeView={mobileView} setView={setMobileView} />
       </main>
-      
-      <BottomNavBar 
-        activeView={mobileView}
-        setView={setMobileView}
-      />
     </div>
   );
 };
