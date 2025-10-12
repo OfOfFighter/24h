@@ -1,0 +1,5 @@
+{
+  "name": "24h Pie Chart Scheduler",
+  "description": "A time schedule management application that allows users to visualize and edit their 24-hour day using an interactive pie chart. It includes features for managing a TO-DO list and saving schedule presets.",
+  "requestFramePermissions": []
+}
