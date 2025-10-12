@@ -1,19 +1,23 @@
 const CACHE_NAME = '24h-pie-scheduler-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/index.tsx',
-  '/icon.svg',
-  '/manifest.json',
-  '/types.ts',
-  '/App.tsx',
-  '/components/SchedulePieChart.tsx',
-  '/components/SidePanel.tsx',
-  '/components/ScheduleEditor.tsx',
-  '/components/TodoList.tsx',
-  '/components/PresetManager.tsx',
-  '/components/icons.tsx',
-  '/components/BottomNavBar.tsx'
+  './',
+  './index.html',
+  './index.tsx',
+  './icon.svg',
+  './manifest.json',
+  './types.ts',
+  './App.tsx',
+  './components/SchedulePieChart.tsx',
+  './components/SidePanel.tsx',
+  './components/ScheduleEditor.tsx',
+  './components/TodoList.tsx',
+  './components/PresetManager.tsx',
+  './components/icons.tsx',
+  './components/BottomNavBar.tsx',
+  'https://cdn.tailwindcss.com',
+  'https://esm.sh/react@18.3.1',
+  'https://esm.sh/react-dom@18.3.1/client',
+  'https://esm.sh/recharts@2.12.7'
 ];
 
 self.addEventListener('install', event => {
