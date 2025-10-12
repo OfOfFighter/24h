@@ -2,6 +2,7 @@ const CACHE_NAME = '24h-pie-scheduler-v1';
 const urlsToCache = [
   './',
   './index.html',
+  './404.html',
   './index.tsx',
   './icon.svg',
   './manifest.json',
@@ -14,10 +15,6 @@ const urlsToCache = [
   './components/PresetManager.tsx',
   './components/icons.tsx',
   './components/BottomNavBar.tsx',
-  'https://cdn.tailwindcss.com',
-  'https://esm.sh/react@18.3.1',
-  'https://esm.sh/react-dom@18.3.1/client',
-  'https://esm.sh/recharts@2.12.7'
 ];
 
 self.addEventListener('install', event => {
@@ -26,21 +23,44 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Opened cache');
+        // External resources are not cached on install anymore.
+        // They will be cached on the first fetch.
         return cache.addAll(urlsToCache);
       })
   );
 });
 
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
+  const url = new URL(event.request.url);
+
+  // For external assets from CDNs, use a stale-while-revalidate strategy.
+  if (url.hostname === 'esm.sh' || url.hostname === 'cdn.tailwindcss.com') {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache => {
+        return cache.match(event.request).then(response => {
+          const fetchPromise = fetch(event.request).then(networkResponse => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          }).catch(err => {
+            console.error('Fetch failed for:', event.request.url, err);
+          });
+          // Return cached response immediately if available, otherwise wait for fetch.
+          return response || fetchPromise;
+        });
       })
-  );
+    );
+  } else {
+    // For local app shell assets, use cache-first, falling back to network.
+    event.respondWith(
+      caches.match(event.request)
+        .then(response => {
+          if (response) {
+            return response;
+          }
+          return fetch(event.request);
+        })
+    );
+  }
 });
 
 self.addEventListener('activate', event => {
