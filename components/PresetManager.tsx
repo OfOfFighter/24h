@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Preset } from '../types';
-import { SaveIcon, LoadIcon, TrashIcon } from './icons';
+import { Preset } from '../types.ts';
+import { SaveIcon, LoadIcon, TrashIcon } from './icons.tsx';
 
 interface PresetManagerProps {
   presets: Preset[];

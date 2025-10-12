@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { ScheduleItem } from '../types';
-import { EditIcon, TrashIcon, PlusCircleIcon } from './icons';
+import { ScheduleItem } from '../types.ts';
+import { EditIcon, TrashIcon, PlusCircleIcon } from './icons.tsx';
 
 interface ScheduleEditorProps {
   schedule: ScheduleItem[];

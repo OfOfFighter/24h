@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScheduleItem, TodoItem, Preset } from './types';
-import SchedulePieChart from './components/SchedulePieChart';
-import SidePanel from './components/SidePanel';
-import ScheduleEditor from './components/ScheduleEditor';
-import TodoList from './components/TodoList';
-import PresetManager from './components/PresetManager';
-import BottomNavBar, { MobileView } from './components/BottomNavBar';
-import { ClockIcon } from './components/icons';
+import { ScheduleItem, TodoItem, Preset } from './types.ts';
+import SchedulePieChart from './components/SchedulePieChart.tsx';
+import SidePanel from './components/SidePanel.tsx';
+import ScheduleEditor from './components/ScheduleEditor.tsx';
+import TodoList from './components/TodoList.tsx';
+import PresetManager from './components/PresetManager.tsx';
+import BottomNavBar, { MobileView } from './components/BottomNavBar.tsx';
+import { ClockIcon } from './components/icons.tsx';
 
 const DEFAULT_COLORS = [
   '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
