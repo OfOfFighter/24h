@@ -1,14 +1,13 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import SidePanel from './components/SidePanel.tsx';
-import SchedulePieChart from './components/SchedulePieChart.tsx';
-import BottomNavBar, { MobileView } from './components/BottomNavBar.tsx';
-import ScheduleEditor from './components/ScheduleEditor.tsx';
-import TodoList from './components/TodoList.tsx';
-import PresetManager from './components/PresetManager.tsx';
-import { ScheduleItem, TodoItem, Preset } from './types.ts';
+import SidePanel from './components/SidePanel';
+import SchedulePieChart from './components/SchedulePieChart';
+import BottomNavBar, { MobileView } from './components/BottomNavBar';
+import ScheduleEditor from './components/ScheduleEditor';
+import TodoList from './components/TodoList';
+import PresetManager from './components/PresetManager';
+import { ScheduleItem, TodoItem, Preset } from './types';
 
 const defaultSchedule: ScheduleItem[] = [
   { id: '1', name: '睡眠', start: 0, end: 7, color: '#1F2937' },

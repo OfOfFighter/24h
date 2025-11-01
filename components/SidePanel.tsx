@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
-import { ScheduleItem, TodoItem, Preset } from '../types.ts';
-import ScheduleEditor from './ScheduleEditor.tsx';
-import TodoList from './TodoList.tsx';
-import PresetManager from './PresetManager.tsx';
-import { ClockIcon, ListCheckIcon, SaveIcon } from './icons.tsx';
+import { ScheduleItem, TodoItem, Preset } from '../types';
+import ScheduleEditor from './ScheduleEditor';
+import TodoList from './TodoList';
+import PresetManager from './PresetManager';
+import { ClockIcon, ListCheckIcon, SaveIcon } from './icons';
 
 interface SidePanelProps {
   schedule: ScheduleItem[];

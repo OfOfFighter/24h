@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { ClockIcon, ListCheckIcon, SaveIcon, ChartPieIcon } from './icons.tsx';
+import { ClockIcon, ListCheckIcon, SaveIcon, ChartPieIcon } from './icons';
 
 export type MobileView = 'chart' | 'schedule' | 'todo' | 'presets';
 

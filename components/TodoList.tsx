@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
-import { TodoItem } from '../types.ts';
-import { TrashIcon, PlusIcon } from './icons.tsx';
+import { TodoItem } from '../types';
+import { TrashIcon, PlusIcon } from './icons';
 
 interface TodoListProps {
   todos: TodoItem[];
